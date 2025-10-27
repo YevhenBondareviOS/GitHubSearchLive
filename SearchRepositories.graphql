@@ -1,0 +1,47 @@
+query SearchRepositories($query: String!, $first: Int = 200, $after: String) {
+  search(query: $query, type: REPOSITORY, first: $first, after: $after) {
+    repositoryCount
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    edges {
+      node {
+        ... on Repository {
+          id
+          name
+          nameWithOwner
+          owner { login avatarUrl(size: 64) }
+          description
+          url
+          homepageUrl
+          isPrivate
+          isFork
+          stargazerCount
+          forkCount
+          watchers { totalCount }
+          issues { totalCount }
+          pullRequests { totalCount }
+          licenseInfo { name spdxId }
+          primaryLanguage { name color }
+          languages(first: 10) { nodes { name } }
+          repositoryTopics(first: 10) {
+            nodes { topic { name } }
+          }
+          defaultBranchRef {
+            name
+            target {
+              ... on Commit {
+                history(first: 1) {
+                  edges { node { committedDate } }
+                }
+              }
+            }
+          }
+          createdAt
+          updatedAt
+        }
+      }
+    }
+  }
+}

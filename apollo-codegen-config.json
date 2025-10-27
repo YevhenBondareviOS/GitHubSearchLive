@@ -1,12 +1,12 @@
 {
   "schemaNamespace": "GitHubAPI",
   "input": {
-    "schemaSearchPaths": ["GraphQL/schema.graphqls"],
-    "operationSearchPaths": ["GraphQL/**/*.graphql"]
+    "schemaSearchPaths": ["GitHubSearchLive/GraphQL/schema.graphqls"],
+    "operationSearchPaths": ["GitHubSearchLive/GraphQL/**/*.graphql"]
   },
   "output": {
     "schemaTypes": {
-      "path": "GraphQL/Generated/Schema",
+      "path": "GitHubSearchLive/GraphQL/Generated/Schema",
       "moduleType": { "embeddedInTarget": { "name": "GitHubSearchLive" } }
     },
     "operations": {
