@@ -12,12 +12,44 @@ class ViewController: UIViewController {
     
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Int, RepositoryItem>!
+    private var searchBar: UISearchBar!
+    private var activityIndicator: UIActivityIndicatorView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupSearchBar()
         setupCollectionView()
         setupDataSource()
+        setupActivityIndicator()
         fetchRepositories()
+    }
+    
+    private func setupSearchBar() {
+        searchBar = UISearchBar()
+        searchBar.delegate = self
+        searchBar.placeholder = "Search repositories..."
+        searchBar.searchBarStyle = .minimal
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        
+        view.addSubview(searchBar)
+        NSLayoutConstraint.activate([
+            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+    }
+    
+    private func setupActivityIndicator() {
+        activityIndicator = UIActivityIndicatorView(style: .large)
+        activityIndicator.color = .systemBlue
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.hidesWhenStopped = true
+        
+        view.addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
     }
     
     private func setupCollectionView() {
@@ -35,7 +67,7 @@ class ViewController: UIViewController {
         view.addSubview(collectionView)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            collectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -55,11 +87,12 @@ class ViewController: UIViewController {
         }
     }
     
-    private func fetchRepositories() {
-        // Example: search Swift repos with lots of stars, first page
-        let searchString = "language:swift stars:>1000 sort:stars-desc"
-
-        let query = GitHubAPI.SearchRepositoriesQuery(query: searchString, first: 50, after: nil)
+    private func fetchRepositories(searchQuery: String = "test") {
+        DispatchQueue.main.async {
+            self.activityIndicator.startAnimating()
+        }
+        
+        let query = GitHubAPI.SearchRepositoriesQuery(query: searchQuery, first: 40, after: nil)
         Network.shared.fetch(query: query, cachePolicy: .fetchIgnoringCacheCompletely) { result in
           switch result {
           case .success(let graphQLResult):
@@ -86,6 +119,7 @@ class ViewController: UIViewController {
               
               // Update UI on main thread
               DispatchQueue.main.async {
+                self.activityIndicator.stopAnimating()
                 self.updateCollectionView(with: repos)
               }
             }
@@ -93,6 +127,7 @@ class ViewController: UIViewController {
             if let errors = graphQLResult.errors {
               print("GraphQL errors:", errors)
               DispatchQueue.main.async {
+                self.activityIndicator.stopAnimating()
                 self.showErrorAlert(message: "GraphQL Error: \(errors.first?.message ?? "Unknown error")")
               }
             }
@@ -100,6 +135,7 @@ class ViewController: UIViewController {
           case .failure(let error):
             print("Network error:", error)
             DispatchQueue.main.async {
+              self.activityIndicator.stopAnimating()
               self.showErrorAlert(message: "Network Error: \(error.localizedDescription)")
             }
           }
@@ -123,6 +159,36 @@ class ViewController: UIViewController {
 extension ViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: collectionView.frame.width - 32, height: 80)
+    }
+}
+
+extension ViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+        performSearch()
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+    }
+    
+    private func performSearch() {
+        guard let searchText = searchBar.text, !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            // If search is empty, show default Swift repos
+            fetchRepositories()
+            return
+        }
+        
+        let userSearchTerm = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Combine user search term with filters and sorting
+//        sort:stars-desc         # Sort by stars (descending)
+//        sort:stars-asc          # Sort by stars (ascending)
+//        sort:forks-desc         # Sort by forks (descending)
+//        sort:updated-desc       # Sort by last updated (descending)
+//        sort:created-desc       # Sort by creation date (descending)
+        let searchQuery = "\(userSearchTerm) language:swift stars:>100 sort:stars-desc"
+        
+        fetchRepositories(searchQuery: searchQuery)
     }
 }
 
