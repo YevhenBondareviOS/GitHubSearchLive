@@ -14,7 +14,6 @@ class ViewController: UIViewController {
     private var dataSource: UICollectionViewDiffableDataSource<Int, RepositoryItem>!
     private var searchBar: UISearchBar!
     private var activityIndicator: UIActivityIndicatorView!
-    private var refreshControl: UIRefreshControl!
     
     // Filter buttons
     private var languageButton: UIButton!
@@ -34,7 +33,6 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         setupSearchBar()
         setupFilterButtons()
-        setupRefreshControl()
         setupCollectionView()
         setupDataSource()
         setupActivityIndicator()
@@ -54,12 +52,6 @@ class ViewController: UIViewController {
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
-    }
-    
-    private func setupRefreshControl() {
-        refreshControl = UIRefreshControl()
-        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
-        refreshControl.attributedTitle = NSAttributedString(string: "Pull to refresh")
     }
     
     private func setupFilterButtons() {
@@ -127,7 +119,6 @@ class ViewController: UIViewController {
         collectionView.backgroundColor = .systemGroupedBackground
         collectionView.delegate = self
         collectionView.register(RepositoryCollectionViewCell.self, forCellWithReuseIdentifier: RepositoryCollectionViewCell.identifier)
-        collectionView.refreshControl = refreshControl
         
         view.addSubview(collectionView)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -186,7 +177,6 @@ class ViewController: UIViewController {
               // Update UI on main thread
               DispatchQueue.main.async {
                 self.activityIndicator.stopAnimating()
-                self.refreshControl.endRefreshing()
                 self.updateCollectionView(with: repos)
               }
             }
@@ -195,7 +185,6 @@ class ViewController: UIViewController {
               print("GraphQL errors:", errors)
               DispatchQueue.main.async {
                 self.activityIndicator.stopAnimating()
-                self.refreshControl.endRefreshing()
                 self.showErrorAlert(message: "GraphQL Error: \(errors.first?.message ?? "Unknown error")")
               }
             }
@@ -204,7 +193,6 @@ class ViewController: UIViewController {
             print("Network error:", error)
             DispatchQueue.main.async {
               self.activityIndicator.stopAnimating()
-              self.refreshControl.endRefreshing()
               self.showErrorAlert(message: "Network Error: \(error.localizedDescription)")
             }
           }
@@ -263,10 +251,6 @@ extension ViewController: UISearchBarDelegate {
     }
     
     // MARK: - Button Actions
-    
-    @objc private func refreshData() {
-        performSearch()
-    }
     
     @objc private func languageButtonTapped() {
         let alert = UIAlertController(title: "Select Language", message: nil, preferredStyle: .actionSheet)
