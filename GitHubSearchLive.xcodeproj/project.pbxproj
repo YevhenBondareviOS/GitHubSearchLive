@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2543CD862EAF799900B4FFE5 /* Apollo in Frameworks */ = {isa = PBXBuildFile; productRef = 2543CD852EAF799900B4FFE5 /* Apollo */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		2543CD672EAF789A00B4FFE5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2543CD862EAF799900B4FFE5 /* Apollo in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +130,7 @@
 			);
 			name = GitHubSearchLive;
 			packageProductDependencies = (
+				2543CD852EAF799900B4FFE5 /* Apollo */,
 			);
 			productName = GitHubSearchLive;
 			productReference = 2543CD4D2EAF789900B4FFE5 /* GitHubSearchLive.app */;
@@ -208,6 +214,9 @@
 			);
 			mainGroup = 2543CD442EAF789900B4FFE5;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2543CD842EAF799900B4FFE5 /* XCRemoteSwiftPackageReference "apollo-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2543CD4E2EAF789900B4FFE5 /* Products */;
 			projectDirPath = "";
@@ -591,6 +600,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2543CD842EAF799900B4FFE5 /* XCRemoteSwiftPackageReference "apollo-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apollographql/apollo-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2543CD852EAF799900B4FFE5 /* Apollo */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2543CD842EAF799900B4FFE5 /* XCRemoteSwiftPackageReference "apollo-ios" */;
+			productName = Apollo;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2543CD452EAF789900B4FFE5 /* Project object */;
 }
