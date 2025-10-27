@@ -15,9 +15,24 @@ class ViewController: UIViewController {
     private var searchBar: UISearchBar!
     private var activityIndicator: UIActivityIndicatorView!
     
+    // Filter buttons
+    private var languageButton: UIButton!
+    private var sortByButton: UIButton!
+    private var sortOrderButton: UIButton!
+    
+    // Filter properties
+    private var selectedLanguage: String = "swift"
+    private var selectedSortBy: String = "stars"
+    private var selectedSortOrder: String = "desc"
+    
+    private let languages = ["swift", "javascript", "python", "java", "typescript", "go", "rust", "kotlin", "php", "ruby"]
+    private let sortOptions = ["stars", "forks", "updated", "created"]
+    private let sortOrders = ["desc", "asc"]
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupSearchBar()
+        setupFilterButtons()
         setupCollectionView()
         setupDataSource()
         setupActivityIndicator()
@@ -36,6 +51,47 @@ class ViewController: UIViewController {
             searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+    }
+    
+    private func setupFilterButtons() {
+        // Language button
+        languageButton = UIButton(type: .system)
+        languageButton.setTitle("Language: Swift", for: .normal)
+        languageButton.backgroundColor = .systemBlue
+        languageButton.setTitleColor(.white, for: .normal)
+        languageButton.layer.cornerRadius = 8
+        languageButton.addTarget(self, action: #selector(languageButtonTapped), for: .touchUpInside)
+        
+        // Sort by button
+        sortByButton = UIButton(type: .system)
+        sortByButton.setTitle("Sort: Stars", for: .normal)
+        sortByButton.backgroundColor = .systemGreen
+        sortByButton.setTitleColor(.white, for: .normal)
+        sortByButton.layer.cornerRadius = 8
+        sortByButton.addTarget(self, action: #selector(sortByButtonTapped), for: .touchUpInside)
+        
+        // Sort order button
+        sortOrderButton = UIButton(type: .system)
+        sortOrderButton.setTitle("Order: ↓", for: .normal)
+        sortOrderButton.backgroundColor = .systemOrange
+        sortOrderButton.setTitleColor(.white, for: .normal)
+        sortOrderButton.layer.cornerRadius = 8
+        sortOrderButton.addTarget(self, action: #selector(sortOrderButtonTapped), for: .touchUpInside)
+        
+        // Stack view for buttons
+        let stackView = UIStackView(arrangedSubviews: [languageButton, sortByButton, sortOrderButton])
+        stackView.axis = .horizontal
+        stackView.distribution = .fillEqually
+        stackView.spacing = 8
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        view.addSubview(stackView)
+        NSLayoutConstraint.activate([
+            stackView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 8),
+            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            stackView.heightAnchor.constraint(equalToConstant: 40)
         ])
     }
     
@@ -67,7 +123,7 @@ class ViewController: UIViewController {
         view.addSubview(collectionView)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
+            collectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 56), // 8 + 40 + 8 spacing
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -87,12 +143,13 @@ class ViewController: UIViewController {
         }
     }
     
-    private func fetchRepositories(searchQuery: String = "test") {
+    private func fetchRepositories(searchQuery: String? = nil) {
         DispatchQueue.main.async {
             self.activityIndicator.startAnimating()
         }
         
-        let query = GitHubAPI.SearchRepositoriesQuery(query: searchQuery, first: 40, after: nil)
+        let finalQuery = searchQuery ?? buildSearchQuery(userSearchTerm: "")
+        let query = GitHubAPI.SearchRepositoriesQuery(query: finalQuery, first: 40, after: nil)
         Network.shared.fetch(query: query, cachePolicy: .fetchIgnoringCacheCompletely) { result in
           switch result {
           case .success(let graphQLResult):
@@ -173,22 +230,100 @@ extension ViewController: UISearchBarDelegate {
     
     private func performSearch() {
         guard let searchText = searchBar.text, !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            // If search is empty, show default Swift repos
+            // If search is empty, show default repos with current filters
             fetchRepositories()
             return
         }
         
         let userSearchTerm = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Combine user search term with filters and sorting
-//        sort:stars-desc         # Sort by stars (descending)
-//        sort:stars-asc          # Sort by stars (ascending)
-//        sort:forks-desc         # Sort by forks (descending)
-//        sort:updated-desc       # Sort by last updated (descending)
-//        sort:created-desc       # Sort by creation date (descending)
-        let searchQuery = "\(userSearchTerm) language:swift stars:>100 sort:stars-desc"
+        let searchQuery = buildSearchQuery(userSearchTerm: userSearchTerm)
         
         fetchRepositories(searchQuery: searchQuery)
+    }
+    
+    private func buildSearchQuery(userSearchTerm: String) -> String {
+        var query = userSearchTerm
+        query += " language:\(selectedLanguage)"
+        query += " stars:>100"
+        query += " sort:\(selectedSortBy)-\(selectedSortOrder)"
+        return query
+    }
+    
+    // MARK: - Button Actions
+    
+    @objc private func languageButtonTapped() {
+        let alert = UIAlertController(title: "Select Language", message: nil, preferredStyle: .actionSheet)
+        
+        for language in languages {
+            let action = UIAlertAction(title: language.capitalized, style: .default) { _ in
+                self.selectedLanguage = language
+                self.languageButton.setTitle("Language: \(language.capitalized)", for: .normal)
+                self.performSearch()
+            }
+            alert.addAction(action)
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // For iPad
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = languageButton
+            popover.sourceRect = languageButton.bounds
+        }
+        
+        present(alert, animated: true)
+    }
+    
+    @objc private func sortByButtonTapped() {
+        let alert = UIAlertController(title: "Sort By", message: nil, preferredStyle: .actionSheet)
+        
+        for sortOption in sortOptions {
+            let action = UIAlertAction(title: sortOption.capitalized, style: .default) { _ in
+                self.selectedSortBy = sortOption
+                self.sortByButton.setTitle("Sort: \(sortOption.capitalized)", for: .normal)
+                self.performSearch()
+            }
+            alert.addAction(action)
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // For iPad
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = sortByButton
+            popover.sourceRect = sortByButton.bounds
+        }
+        
+        present(alert, animated: true)
+    }
+    
+    @objc private func sortOrderButtonTapped() {
+        let alert = UIAlertController(title: "Sort Order", message: nil, preferredStyle: .actionSheet)
+        
+        let descAction = UIAlertAction(title: "Descending (↓)", style: .default) { _ in
+            self.selectedSortOrder = "desc"
+            self.sortOrderButton.setTitle("Order: ↓", for: .normal)
+            self.performSearch()
+        }
+        
+        let ascAction = UIAlertAction(title: "Ascending (↑)", style: .default) { _ in
+            self.selectedSortOrder = "asc"
+            self.sortOrderButton.setTitle("Order: ↑", for: .normal)
+            self.performSearch()
+        }
+        
+        alert.addAction(descAction)
+        alert.addAction(ascAction)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // For iPad
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = sortOrderButton
+            popover.sourceRect = sortOrderButton.bounds
+        }
+        
+        present(alert, animated: true)
     }
 }
 
