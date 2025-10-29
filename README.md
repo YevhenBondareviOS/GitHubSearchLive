@@ -4,8 +4,8 @@ GitHub repo search app built with Swift and Apollo GraphQL.
 
 ## Known issues
 
-### 1. Unstable and really slow network requests
-### 2. Missing functionality: search seams not working
+1. Unstable and really slow network requests
+2. Missing functionality: search seams not working
 
 ## Live coding task
 
