@@ -19,6 +19,7 @@ Implement MVVM approach with Swift Combine
 2. Refresh on user request
 3. Pagination
 4. Filtering and sorting
-5. Mutating details screen opening
-6. Offline caching mechanism
+5. Mutations: add a star to a repo
+6. Repo details screen where you can see more information and add a star too
+7. Offline caching mechanism
 
